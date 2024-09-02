@@ -4,7 +4,7 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>ChatGPT Local con TTS y STT</title>
+  <title>ChatGPT Local 100% privado, gratis y maravilloso</title>
 
   <style>
     body {
@@ -12,19 +12,21 @@
       background: #f0f0f0;
       display: grid;
       place-content: center;
-      height: 100vh;
+      height: 100dvh;
     }
 
     main {
       width: 400px;
       max-width: 100%;
       height: 70vh;
+
       background: #fff;
       border: 1px solid #ccc;
       border-radius: 4px;
       box-shadow: 0 0 10px rgba(0, 0, 0, 0.1);
       padding: 8px;
       margin-bottom: 16px;
+
       overflow-y: auto;
       scroll-behavior: smooth;
     }
@@ -41,77 +43,76 @@
       flex-direction: column;
       margin: 4px 0;
       padding: 4px 8px;
-    }
 
-    .message span {
-      width: 36px;
-      height: 36px;
-      background: #eee;
-      font-size: 12px;
-      font-weight: 500;
-      display: flex;
-      justify-content: center;
-      align-items: center;
-      border-radius: 999999px;
-    }
+      span {
+        width: 36px;
+        height: 36px;
+        background: #eee;
+        font-size: 12px;
+        font-weight: 500;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        border-radius: 999999px;
+      }
 
-    .message p {
-      border-radius: 4px;
-      padding: 4px 8px;
-      margin-top: 4px;
-    }
+      p {
+        border-radius: 4px;
+        padding: 4px 8px;
+        margin-top: 4px;
+      }
 
-    .user {
-      align-self: flex-end;
-      align-items: flex-end;
-    }
+      &.user {
+        align-self: flex-end;
+        align-items: flex-end;
 
-    .user span,
-    .user p {
-      background: rgb(219, 236, 255);
-    }
+        span,
+        p {
+          background: rgb(219, 236, 255);
+        }
+      }
 
-    .bot {
-      align-self: flex-start;
-    }
+      &.bot {
+        align-self: flex-start;
 
-    .bot span,
-    .bot p {
-      background: rgb(198, 255, 220);
+        span,
+        p {
+          background: rgb(198, 255, 220);
+        }
+      }
     }
 
     form {
       display: flex;
-      margin-top: 10px;
-    }
 
-    input {
-      border-radius: 999999px;
-      flex-grow: 1;
-      border: 0;
-      padding: 8px;
-      margin-right: 8px;
-      border: 1px solid #ccc;
-    }
+      input {
+        border-radius: 999999px;
+        flex-grow: 1;
+        border: 0;
+        padding: 8px;
+        margin-right: 8px;
+        border: 1px solid #ccc;
+      }
 
-    button {
-      background: #09f;
-      border: 0;
-      color: white;
-      border-radius: 6px;
-      cursor: pointer;
-      padding: 8px;
-      transition: background .3s ease;
-    }
+      button {
+        background: #09f;
+        border: 0;
+        color: white;
+        border-radius: 6px;
+        cursor: pointer;
+        padding: 8px;
+        transition: background .3s ease;
 
-    button[disabled] {
-      background: #ccc;
-      opacity: .6;
-      pointer-events: none;
-    }
+        &[disabled] {
+          background: #ccc;
+          opacity: .6;
+          pointer-events: none;
+        }
 
-    button:hover {
-      background: rgb(0, 104, 173);
+        &:hover {
+          background: rgb(0, 104, 173);
+        }
+      }
     }
 
     small {
@@ -165,7 +166,9 @@
     }
   </style>
 
-  <script>
+  <script type="module">
+    import { CreateWebWorkerMLCEngine } from "https://esm.run/@mlc-ai/web-llm"
+
     const $ = el => document.querySelector(el)
 
     const $form = $('form')
@@ -179,16 +182,25 @@
 
     let messages = []
     let end = false
-    let isListening = false
 
-    // Dummy function to simulate chatbot response
-    async function getChatbotResponse(userMessage) {
-      return new Promise((resolve) => {
-        setTimeout(() => {
-          resolve("Este es un mensaje de prueba del bot en español.");
-        }, 1000);
-      });
-    }
+    const SELECTED_MODEL = 'Llama-3-8B-Instruct-q4f32_1-MLC-1k'
+
+    const engine = await CreateWebWorkerMLCEngine(
+      new Worker('./worker.js', { type: 'module' }),
+      SELECTED_MODEL,
+      {
+        initProgressCallback: (info) => {
+          $info.textContent = info.text
+          if (info.progress === 1 && !end) {
+            end = true
+            $loading?.parentNode?.removeChild($loading)
+            $button.removeAttribute('disabled')
+            addMessage("¡Hola! Soy un ChatGPT que se ejecuta completamente en tu navegador. ¿En qué puedo ayudarte hoy?", 'bot')
+            $input.focus()
+          }
+        }
+      }
+    )
 
     $form.addEventListener('submit', async (event) => {
       event.preventDefault()
@@ -201,23 +213,39 @@
       addMessage(messageText, 'user')
       $button.setAttribute('disabled', '')
 
-      messages.push({
+      const userMessage = {
         role: 'user',
         content: messageText
+      }
+
+      messages.push(userMessage)
+
+      const chunks = await engine.chat.completions.create({
+        messages,
+        stream: true
       })
 
-      try {
-        const reply = await getChatbotResponse(messageText)
+      let reply = ""
 
-        addMessage(reply, 'bot')
-        speak(reply)
+      const $botMessage = addMessage("", 'bot')
 
-      } catch (error) {
-        console.error('Error en la respuesta del bot:', error)
-      } finally {
-        $button.removeAttribute('disabled')
-        $container.scrollTop = $container.scrollHeight
+      for await (const chunk of chunks) {
+        const choice = chunk.choices[0]
+        const content = choice?.delta?.content ?? ""
+        reply += content
+        $botMessage.textContent = reply
       }
+
+      $button.removeAttribute('disabled')
+      messages.push({
+        role: 'assistant',
+        content: reply
+      })
+
+      $container.scrollTop = $container.scrollHeight
+
+      // Speak the bot's response
+      speak(reply)
     })
 
     function addMessage(text, sender) {
@@ -240,45 +268,12 @@
 
     function speak(text) {
       const utterance = new SpeechSynthesisUtterance(text);
+      
+      // Set the language to Spanish or English based on the content
       utterance.lang = /[áéíóúñ]/.test(text) ? 'es-ES' : 'en-US';
+      
       speechSynthesis.speak(utterance);
     }
-
-    async function startListening() {
-      if (!('webkitSpeechRecognition' in window)) {
-        alert("El reconocimiento de voz no está soportado en este navegador.");
-        return;
-      }
-
-      const recognition = new webkitSpeechRecognition();
-      recognition.lang = 'es-ES'; // Change to 'en-US' for English
-      recognition.interimResults = false;
-      recognition.maxAlternatives = 1;
-
-      recognition.onresult = event => {
-        const transcript = event.results[0][0].transcript;
-        $input.value = transcript;
-        $form.dispatchEvent(new Event('submit'));
-      };
-
-      recognition.onerror = event => {
-        console.error('Error de reconocimiento de voz:', event.error);
-      };
-
-      recognition.onend = () => {
-        isListening = false;
-        $button.removeAttribute('disabled');
-      };
-
-      recognition.start();
-      isListening = true;
-      $button.setAttribute('disabled', 'disabled');
-    }
-
-    document.querySelector('#start-listening').addEventListener('click', async () => {
-      if (isListening) return;
-      await startListening();
-    });
   </script>
 </head>
 
@@ -296,7 +291,6 @@
   <form>
     <input placeholder="Escribe tu mensaje aquí...">
     <button disabled>Enviar</button>
-    <button type="button" id="start-listening">Hablar</button>
   </form>
 
   <small>&nbsp;</small>
