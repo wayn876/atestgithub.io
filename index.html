@@ -292,6 +292,12 @@
       }
     };
 
+    recognition.onend = () => {
+      if (listeningForMikros) {
+        recognition.start(); // Restart recognition if listening for mikros
+      }
+    };
+
     recognition.start();
 
     $button.addEventListener('click', () => {
@@ -314,7 +320,6 @@
     });
   </script>
 </head>
-
 <body>
   <main>
     <ul>
