@@ -272,6 +272,8 @@
     }
 
     recognition.lang = 'es-ES'; // Set language to Spanish (change to 'en-US' for English)
+    recognition.continuous = true; // Keep recognition active
+    recognition.interimResults = false; // Don't show interim results
 
     recognition.onresult = (event) => {
       const transcript = event.results[0][0].transcript.toLowerCase();
@@ -284,32 +286,24 @@
         silenceTimeout = setTimeout(() => {
           playSound('/fin pregunta.mp3');
           $input.value = ''; // Clear input
+          $input.blur(); // Optional: remove focus from the input
         }, 5000); // 5 seconds silence
-      } else if (transcript.includes("vale, vale")) {
-        if (!listeningForMikros) {
-          $form.dispatchEvent(new Event('submit'));
-        }
+      } else if (transcript.includes("vale, vale") && !listeningForMikros) {
+        $form.dispatchEvent(new Event('submit'));
       }
     };
 
     recognition.onend = () => {
       if (listeningForMikros) {
-        recognition.start(); // Restart recognition if listening for mikros
+        recognition.start(); // Restart recognition if still listening for "mikros"
       }
     };
 
     recognition.onerror = (event) => {
-      console.error('Speech recognition error:', event.error);
+      console.error('Speech recognition error', event);
     };
 
-    recognition.start();
-
-    $button.addEventListener('click', () => {
-      const lastBotMessage = $messages.querySelector('.bot p:last-child');
-      if (lastBotMessage) {
-        speakMessage(lastBotMessage.textContent);
-      }
-    });
+    recognition.start(); // Start recognition when page loads
   </script>
 </head>
 <body>
