@@ -294,25 +294,26 @@
       silenceTimeout = setTimeout(() => {
         playSound('/fin pregunta.mp3');
         $input.value = ''; // Clear input
-        $input.blur(); // Optional: remove focus from the input
-        listeningForMikros = false;
-      }, 5000); // 5 seconds silence
+        $input.blur(); // Optional: Remove focus from input
+      }, 5000);
     }
 
     function startRecognition() {
-      recognition.lang = 'es-ES'; // Set language to Spanish (change to 'en-US' for English)
-      recognition.continuous = true; // Keep recognition active
-      recognition.interimResults = false; // Don't show interim results
+      recognition.lang = 'es-ES';
+      recognition.interimResults = false;
+      recognition.continuous = true;
 
       recognition.onresult = (event) => {
-        const transcript = event.results[0][0].transcript.toLowerCase();
+        const transcript = Array.from(event.results)
+          .map(result => result[0].transcript)
+          .join('');
 
-        if (transcript.includes("mikros")) {
+        if (transcript.toLowerCase().includes("mikros")) {
           playSound('/pregunta.mp3');
           $input.focus();
           listeningForMikros = true;
           resetSilenceTimeout();
-        } else if (listeningForMikros && transcript.includes("vale, vale")) {
+        } else if (listeningForMikros && transcript.toLowerCase().includes("vale, vale")) {
           $form.requestSubmit(); // Submit the form
         } else {
           resetSilenceTimeout(); // Reset timeout on new speech
