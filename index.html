@@ -271,6 +271,16 @@
       audio.play();
     }
 
+    function resetSilenceTimeout() {
+      clearTimeout(silenceTimeout);
+      silenceTimeout = setTimeout(() => {
+        playSound('/fin pregunta.mp3');
+        $input.value = ''; // Clear input
+        $input.blur(); // Optional: remove focus from the input
+        listeningForMikros = false;
+      }, 5000); // 5 seconds silence
+    }
+
     recognition.lang = 'es-ES'; // Set language to Spanish (change to 'en-US' for English)
     recognition.continuous = true; // Keep recognition active
     recognition.interimResults = false; // Don't show interim results
@@ -282,14 +292,12 @@
         playSound('/pregunta.mp3');
         $input.focus();
         listeningForMikros = true;
-        clearTimeout(silenceTimeout);
-        silenceTimeout = setTimeout(() => {
-          playSound('/fin pregunta.mp3');
-          $input.value = ''; // Clear input
-          $input.blur(); // Optional: remove focus from the input
-        }, 5000); // 5 seconds silence
-      } else if (transcript.includes("vale, vale") && !listeningForMikros) {
-        $form.dispatchEvent(new Event('submit'));
+        resetSilenceTimeout();
+      } else if (listeningForMikros && transcript.length > 0) {
+        resetSilenceTimeout(); // Reset the timeout if any word is detected
+        $input.value = transcript; // Update input with recognized text
+      } else if (listeningForMikros && transcript.includes("vale, vale")) {
+        $form.requestSubmit(); // Submit the form
       }
     };
 
