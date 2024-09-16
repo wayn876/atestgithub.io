@@ -126,6 +126,13 @@
         #testVibration:hover {
             background-color: #e00000;
         }
+        #3d-container {
+            width: 400px; /* Tamaño pequeño */
+            height: 300px; /* Tamaño pequeño */
+            margin: auto;
+            border: 1px solid #ddd;
+            background-color: #f0f0f0;
+        }
     </style>
 </head>
 <body>
@@ -139,9 +146,9 @@
     <script>
         // Initialize 3D scene
         const scene = new THREE.Scene();
-        const camera = new THREE.PerspectiveCamera(75, window.innerWidth / window.innerHeight, 0.1, 1000);
+        const camera = new THREE.PerspectiveCamera(75, 400 / 300, 0.1, 1000); // Aspect ratio for the smaller container
         const renderer = new THREE.WebGLRenderer();
-        renderer.setSize(window.innerWidth, window.innerHeight);
+        renderer.setSize(400, 300); // Match the size of the container
         document.getElementById('3d-container').appendChild(renderer.domElement);
 
         // Add a cube to the scene
@@ -219,15 +226,13 @@
           <circle cx="0" cy="0" r="2" fill="none" stroke="#000" stroke-width="0.1" />
           <circle cx="0" cy="0" r="0" fill="none" fill="#FF0C00" class="button" />
           <text class="value" dominant-baseline="middle" text-anchor="middle" fill="#000" x="0" y="0">0.00</text>
-          <text class="index" alignment-baseline="hanging" dominant-baseline="hanging" text-anchor="start" fill="#000" x="-2.1" y="-2.6">0</text>
+          <text class="index" alignment-baseline="hanging" dominant-baseline="hanging" text-anchor="middle" fill="#000" x="0" y="-2.6">0</text>
         </svg>
         `;
 
         function addGamepad(gamepad) {
-          console.log("add:", gamepad.index);
           const elem = document.createElement("div");
           elem.innerHTML = controllerTemplate;
-
           const axesElem = elem.querySelector(".axes");
           const buttonsElem = elem.querySelector(".buttons");
 
@@ -261,13 +266,9 @@
             buttons,
             index: elem.querySelector(".index"),
             id: elem.querySelector(".id"),
-
             mapping: elem.querySelector(".mapping"),
-
             connected: elem.querySelector(".connected"),
-
             timestamp: elem.querySelector(".timestamp"),
-
             pose: elem.querySelector(".pose"),
             hapticActuators: elem.querySelector(".hapticActuators"),
             hand: elem.querySelector(".hand"),
@@ -360,7 +361,6 @@
 
         function process() {
           addNewPads(); // Some browsers add by polling, others by event
-
           Object.values(gamepadsByIndex).forEach(processController);
           requestAnimationFrame(process);
         }
