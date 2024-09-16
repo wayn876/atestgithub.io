@@ -7,7 +7,7 @@
     <style>
         body {
             margin: 0;
-            overflow: hidden;
+            overflow: hidden; /* Evitar el scroll en el cuerpo */
             background-color: #f0f0f0;
         }
         #gamepads > * {
@@ -129,9 +129,14 @@
         #3d-container {
             width: 400px; /* Tamaño pequeño */
             height: 300px; /* Tamaño pequeño */
-            margin: auto;
+            margin: 20px auto; /* Centrar el contenedor */
             border: 1px solid #ddd;
             background-color: #f0f0f0;
+            overflow: hidden; /* Ocultar cualquier desbordamiento */
+            position: relative;
+        }
+        #3d-container canvas {
+            display: block; /* Eliminar el margen debajo del canvas */
         }
     </style>
 </head>
@@ -225,8 +230,8 @@
         <svg viewBox="-2.2 -2.2 4.4 4.4" width="54" height="63">
           <circle cx="0" cy="0" r="2" fill="none" stroke="#000" stroke-width="0.1" />
           <circle cx="0" cy="0" r="0" fill="none" fill="#FF0C00" class="button" />
-          <text class="value" dominant-baseline="middle" text-anchor="middle" fill="#000" x="0" y="0">0.00</text>
-          <text class="index" alignment-baseline="hanging" dominant-baseline="hanging" text-anchor="middle" fill="#000" x="0" y="-2.6">0</text>
+          <text class="value" dominant-baseline="middle" text-anchor="middle" fill="#000" x="0" y="0">0.0</text>
+          <text class="index" dominant-baseline="middle" text-anchor="middle" fill="#000" x="0" y="-2.6">0</text>
         </svg>
         `;
 
